@@ -46,10 +46,9 @@ def calculate_results(inputs):
         "_var_cost_per_processed_ton_component": var_cost_per_processed_ton,
     }
 
-# Current column color is based on comparison to Original Scenario:
-# - Current < Original => red
-# - Current > Original => green
-# - Current == Original => black
+# =====================================================
+# STYLING LOGIC (unchanged)
+# =====================================================
 def style_comparison_table(df_raw, eps=1e-9):
     def style_row(row):
         current_val = float(row["Current"])
@@ -79,7 +78,7 @@ def style_comparison_table(df_raw, eps=1e-9):
     return styler
 
 # =====================================================
-# DEFAULTS (integers for whole-number increments)
+# DEFAULTS
 # =====================================================
 DEFAULTS = {
     "unit_price": 200,
@@ -102,7 +101,7 @@ if "original_snapshot" not in st.session_state:
     st.session_state.original_snapshot = calculate_results(DEFAULTS.copy())
 
 # =====================================================
-# SIDEBAR CONTROLS (mobile toggle, explore mode, desktop navigation)
+# SIDEBAR
 # =====================================================
 with st.sidebar:
     st.header("View")
@@ -121,7 +120,6 @@ with st.sidebar:
         6: "6) Unit Economics",
     }
 
-    # Desktop-friendly navigation stays here
     if not mobile_view:
         st.session_state.step = st.radio(
             "Choose a step",
@@ -130,18 +128,8 @@ with st.sidebar:
             index=st.session_state.step - 1,
         )
 
-        nav1, nav2 = st.columns(2)
-        with nav1:
-            if st.button("◀ Prev", use_container_width=True) and st.session_state.step > 1:
-                st.session_state.step -= 1
-                st.rerun()
-        with nav2:
-            if st.button("Next ▶", use_container_width=True) and st.session_state.step < 6:
-                st.session_state.step += 1
-                st.rerun()
-
 # =====================================================
-# SCENARIOS (TOP)
+# SCENARIOS
 # =====================================================
 SCENARIO_TEXT = {
     "Base case": "Baseline operations. Learn how price, volume, and costs roll into Revenue, Contribution, and EBITDA.",
@@ -160,25 +148,16 @@ SCENARIOS = {
 scenario_name = st.selectbox("Scenario", list(SCENARIOS.keys()))
 st.info(SCENARIO_TEXT[scenario_name])
 
-btn1, btn2 = st.columns(2)
-with btn1:
-    if st.button("Load scenario numbers", use_container_width=True):
-        for k, v in SCENARIOS[scenario_name].items():
-            st.session_state[k] = v
-        st.session_state.original_snapshot = calculate_results(SCENARIOS[scenario_name].copy())
-        st.rerun()
-
-with btn2:
-    if st.button("Reset to defaults", use_container_width=True):
-        for k, v in DEFAULTS.items():
-            st.session_state[k] = v
-        st.session_state.original_snapshot = calculate_results(DEFAULTS.copy())
-        st.rerun()
+if st.button("Load scenario numbers", use_container_width=True):
+    for k, v in SCENARIOS[scenario_name].items():
+        st.session_state[k] = v
+    st.session_state.original_snapshot = calculate_results(SCENARIOS[scenario_name].copy())
+    st.rerun()
 
 st.divider()
 
 # =====================================================
-# MOBILE STEP NAV (top selector)
+# MOBILE STEP SELECTOR
 # =====================================================
 if mobile_view:
     st.session_state.step = st.selectbox(
@@ -209,7 +188,7 @@ def input_label(text, key):
     return f"**{text}**" if not disabled_for(key) else text
 
 # =====================================================
-# INPUTS UI (desktop in left column, mobile in expander)
+# INPUT RENDER
 # =====================================================
 def render_inputs():
     st.number_input(input_label("Unit price", "unit_price"), step=1, key="unit_price", disabled=disabled_for("unit_price"))
@@ -228,7 +207,7 @@ current = calculate_results(inputs)
 baseline = st.session_state.original_snapshot
 
 # =====================================================
-# LESSON + RESULTS RENDER
+# LESSON + RESULTS
 # =====================================================
 def render_lesson_and_results():
     step = st.session_state.step
@@ -274,20 +253,20 @@ def render_lesson_and_results():
     metrics = ["Revenue", "Variable Cost", "Contribution", "Fixed Cost", "EBITDA"]
     rows = []
     for m in metrics:
-        cur = current[m]
-        base = baseline[m]
-        var = cur - base
-        rows.append([cur, base, var])
+        rows.append([current[m], baseline[m], current[m] - baseline[m]])
 
     df = pd.DataFrame(rows, index=metrics, columns=["Current", "Original Scenario", "Variance"])
+    styled = style_comparison_table(df)
 
-    # Mobile-friendly rendering
-    if mobile_view:
-        with st.expander("Open results table", expanded=True):
-            st.dataframe(df, use_container_width=True, height=260)
-    else:
-        styled = style_comparison_table(df)
-        st.write(styled.to_html(), unsafe_allow_html=True)
+    # Scrollable container for mobile
+    st.markdown(
+        """
+        <div style="overflow-x:auto; width:100%;">
+        """ + styled.to_html() + """
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # =====================================================
 # FINAL LAYOUT SWITCH
@@ -295,7 +274,6 @@ def render_lesson_and_results():
 if mobile_view:
     with st.expander("Inputs", expanded=True):
         render_inputs()
-
     st.divider()
     render_lesson_and_results()
 else:
