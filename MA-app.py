@@ -47,7 +47,7 @@ def calculate_results(inputs):
     }
 
 # =====================================================
-# STYLING LOGIC (unchanged)
+# TABLE STYLING
 # =====================================================
 def style_comparison_table(df_raw, eps=1e-9):
     def style_row(row):
@@ -101,7 +101,7 @@ if "original_snapshot" not in st.session_state:
     st.session_state.original_snapshot = calculate_results(DEFAULTS.copy())
 
 # =====================================================
-# SIDEBAR
+# SIDEBAR (Always Visible Navigation)
 # =====================================================
 with st.sidebar:
     st.header("View")
@@ -120,13 +120,12 @@ with st.sidebar:
         6: "6) Unit Economics",
     }
 
-    if not mobile_view:
-        st.session_state.step = st.radio(
-            "Choose a step",
-            options=list(steps.keys()),
-            format_func=lambda i: steps[i],
-            index=st.session_state.step - 1,
-        )
+    st.session_state.step = st.radio(
+        "Choose a step",
+        options=list(steps.keys()),
+        format_func=lambda i: steps[i],
+        index=st.session_state.step - 1,
+    )
 
 # =====================================================
 # SCENARIOS
@@ -157,17 +156,6 @@ if st.button("Load scenario numbers", use_container_width=True):
 st.divider()
 
 # =====================================================
-# MOBILE STEP SELECTOR
-# =====================================================
-if mobile_view:
-    st.session_state.step = st.selectbox(
-        "Step",
-        options=list(steps.keys()),
-        format_func=lambda i: steps[i],
-        index=st.session_state.step - 1,
-    )
-
-# =====================================================
 # INPUT LOCKING
 # =====================================================
 def disabled_for(control_name):
@@ -188,7 +176,7 @@ def input_label(text, key):
     return f"**{text}**" if not disabled_for(key) else text
 
 # =====================================================
-# INPUT RENDER
+# INPUTS
 # =====================================================
 def render_inputs():
     st.number_input(input_label("Unit price", "unit_price"), step=1, key="unit_price", disabled=disabled_for("unit_price"))
@@ -258,18 +246,10 @@ def render_lesson_and_results():
     df = pd.DataFrame(rows, index=metrics, columns=["Current", "Original Scenario", "Variance"])
     styled = style_comparison_table(df)
 
-    # Scrollable container for mobile
-    st.markdown(
-        """
-        <div style="overflow-x:auto; width:100%;">
-        """ + styled.to_html() + """
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    st.write(styled.to_html(), unsafe_allow_html=True)
 
 # =====================================================
-# FINAL LAYOUT SWITCH
+# FINAL LAYOUT
 # =====================================================
 if mobile_view:
     with st.expander("Inputs", expanded=True):
