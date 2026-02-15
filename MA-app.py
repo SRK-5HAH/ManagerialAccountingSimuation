@@ -98,8 +98,15 @@ if "original_snapshot" not in st.session_state:
     st.session_state.original_snapshot = calculate_results(DEFAULTS.copy())
 
 # =====================================================
-# SCENARIOS
+# SCENARIOS (RESTORED)
 # =====================================================
+SCENARIO_TEXT = {
+    "Base case": "Baseline operations. Learn how price, volume, and costs roll into Revenue, Contribution, and EBITDA.",
+    "Energy spike": "Energy rates jump. Watch Variable Cost rise and EBITDA fall if price stays constant.",
+    "Price pressure": "Selling price drops. Watch Revenue and margins tighten.",
+    "Lower yield": "Net saleable tons drop while processed tons stay high. See how margin can shrink even when running hard.",
+}
+
 SCENARIOS = {
     "Base case": dict(DEFAULTS),
     "Energy spike": {**DEFAULTS, "energy_per_ton": 30},
@@ -108,6 +115,7 @@ SCENARIOS = {
 }
 
 scenario_name = st.selectbox("Scenario", list(SCENARIOS.keys()))
+st.info(SCENARIO_TEXT[scenario_name])  # <-- RESTORED CONTENT
 
 if st.button("Load scenario numbers"):
     for k, v in SCENARIOS[scenario_name].items():
@@ -118,7 +126,7 @@ if st.button("Load scenario numbers"):
 st.divider()
 
 # =====================================================
-# SIDEBAR NAVIGATION
+# SIDEBAR
 # =====================================================
 with st.sidebar:
     st.header("Navigation")
