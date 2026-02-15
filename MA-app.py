@@ -6,7 +6,7 @@ import pandas as pd
 # =====================================================
 st.set_page_config(page_title="Managerial Accounting Basics", layout="wide")
 st.title("Managerial Accounting Basics")
-st.caption("Step through formulas, load a baseline scenario, then change inputs to see the relationships.")
+st.caption("Step through formulas, set a baseline, then change inputs to see relationships.")
 
 # =====================================================
 # HELPERS
@@ -46,9 +46,10 @@ def calculate_results(inputs):
         "_var_cost_per_processed_ton_component": var_cost_per_processed_ton,
     }
 
-# =====================================================
-# TABLE STYLING
-# =====================================================
+# Current column color is based on comparison to Original Scenario:
+# - Current < Original => red
+# - Current > Original => green
+# - Current == Original => black
 def style_comparison_table(df_raw, eps=1e-9):
     def style_row(row):
         current_val = float(row["Current"])
@@ -97,11 +98,16 @@ for k, v in DEFAULTS.items():
 if "step" not in st.session_state:
     st.session_state.step = 1
 
+# Baseline is frozen unless user explicitly sets it
 if "original_snapshot" not in st.session_state:
     st.session_state.original_snapshot = calculate_results(DEFAULTS.copy())
 
+# Track which baseline is locked
+if "baseline_label" not in st.session_state:
+    st.session_state.baseline_label = "Defaults (locked)"
+
 # =====================================================
-# SIDEBAR (Always Visible Navigation)
+# SIDEBAR (Navigation)
 # =====================================================
 with st.sidebar:
     st.header("View")
@@ -147,11 +153,29 @@ SCENARIOS = {
 scenario_name = st.selectbox("Scenario", list(SCENARIOS.keys()))
 st.info(SCENARIO_TEXT[scenario_name])
 
-if st.button("Load scenario numbers", use_container_width=True):
-    for k, v in SCENARIOS[scenario_name].items():
-        st.session_state[k] = v
-    st.session_state.original_snapshot = calculate_results(SCENARIOS[scenario_name].copy())
-    st.rerun()
+# Baseline lock indicator (what you're comparing against)
+st.success(f"🔒 Baseline locked: **{st.session_state.baseline_label}**")
+
+b1, b2, b3 = st.columns(3)
+with b1:
+    if st.button("Load scenario numbers", use_container_width=True):
+        for k, v in SCENARIOS[scenario_name].items():
+            st.session_state[k] = v
+        st.rerun()
+
+with b2:
+    if st.button("Set baseline to scenario", use_container_width=True):
+        st.session_state.original_snapshot = calculate_results(SCENARIOS[scenario_name].copy())
+        st.session_state.baseline_label = f"{scenario_name} (locked)"
+        st.rerun()
+
+with b3:
+    if st.button("Reset to defaults", use_container_width=True):
+        for k, v in DEFAULTS.items():
+            st.session_state[k] = v
+        st.session_state.original_snapshot = calculate_results(DEFAULTS.copy())
+        st.session_state.baseline_label = "Defaults (locked)"
+        st.rerun()
 
 st.divider()
 
@@ -245,7 +269,6 @@ def render_lesson_and_results():
 
     df = pd.DataFrame(rows, index=metrics, columns=["Current", "Original Scenario", "Variance"])
     styled = style_comparison_table(df)
-
     st.write(styled.to_html(), unsafe_allow_html=True)
 
 # =====================================================
