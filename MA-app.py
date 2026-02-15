@@ -75,7 +75,7 @@ def style_comparison_table(df_raw, eps=1e-9):
     return styler
 
 # =====================================================
-# DEFAULTS (INTEGERS NOW)
+# DEFAULTS
 # =====================================================
 DEFAULTS = {
     "unit_price": 200,
@@ -118,7 +118,7 @@ if st.button("Load scenario numbers"):
 st.divider()
 
 # =====================================================
-# SIDEBAR
+# SIDEBAR NAVIGATION
 # =====================================================
 with st.sidebar:
     st.header("Navigation")
@@ -166,13 +166,16 @@ left, right = st.columns([1, 1.6])
 with left:
     st.subheader("Inputs")
 
-    st.number_input("Unit price", step=1, key="unit_price", disabled=disabled_for("unit_price"))
-    st.number_input("Net saleable tons", step=1, key="net_saleable_tons", disabled=disabled_for("net_saleable_tons"))
-    st.number_input("Processed tons", step=1, key="processed_tons", disabled=disabled_for("processed_tons"))
-    st.number_input("Energy per ton", step=1, key="energy_per_ton", disabled=disabled_for("energy_per_ton"))
-    st.number_input("Labor per ton", step=1, key="labor_per_ton", disabled=disabled_for("labor_per_ton"))
-    st.number_input("Other per ton", step=1, key="other_per_ton", disabled=disabled_for("other_per_ton"))
-    st.number_input("Fixed cost", step=1000, key="fixed_cost", disabled=disabled_for("fixed_cost"))
+    def input_label(text, key):
+        return f"**{text}**" if not disabled_for(key) else text
+
+    st.number_input(input_label("Unit price", "unit_price"), step=1, key="unit_price", disabled=disabled_for("unit_price"))
+    st.number_input(input_label("Net saleable tons", "net_saleable_tons"), step=1, key="net_saleable_tons", disabled=disabled_for("net_saleable_tons"))
+    st.number_input(input_label("Processed tons", "processed_tons"), step=1, key="processed_tons", disabled=disabled_for("processed_tons"))
+    st.number_input(input_label("Energy per ton", "energy_per_ton"), step=1, key="energy_per_ton", disabled=disabled_for("energy_per_ton"))
+    st.number_input(input_label("Labor per ton", "labor_per_ton"), step=1, key="labor_per_ton", disabled=disabled_for("labor_per_ton"))
+    st.number_input(input_label("Other per ton", "other_per_ton"), step=1, key="other_per_ton", disabled=disabled_for("other_per_ton"))
+    st.number_input(input_label("Fixed cost", "fixed_cost"), step=1000, key="fixed_cost", disabled=disabled_for("fixed_cost"))
 
 inputs = {k: st.session_state[k] for k in DEFAULTS.keys()}
 current = calculate_results(inputs)
