@@ -11,27 +11,27 @@ st.caption("Step through formulas, load a baseline scenario, then change inputs 
 # =====================================================
 # HELPERS
 # =====================================================
-def money(x: float) -> str:
+def money(x):
     return f"${x:,.0f}"
 
-def pct(x: float) -> str:
+def pct(x):
     return f"{x * 100:.1f}%"
 
-def calculate_results(inputs: dict) -> dict:
+def calculate_results(inputs):
     revenue = inputs["unit_price"] * inputs["net_saleable_tons"]
 
     var_cost_per_processed_ton = (
         inputs["energy_per_ton"] + inputs["labor_per_ton"] + inputs["other_per_ton"]
     )
-    variable_cost = inputs["processed_tons"] * var_cost_per_processed_ton
 
+    variable_cost = inputs["processed_tons"] * var_cost_per_processed_ton
     contribution = revenue - variable_cost
     ebitda = contribution - inputs["fixed_cost"]
 
-    var_cost_per_ton = (variable_cost / inputs["processed_tons"]) if inputs["processed_tons"] else 0.0
-    contribution_pct = (contribution / revenue) if revenue else 0.0
-    ebitda_pct = (ebitda / revenue) if revenue else 0.0
-    contrib_per_ton = (contribution / inputs["processed_tons"]) if inputs["processed_tons"] else 0.0
+    var_cost_per_ton = variable_cost / inputs["processed_tons"] if inputs["processed_tons"] else 0
+    contribution_pct = contribution / revenue if revenue else 0
+    ebitda_pct = ebitda / revenue if revenue else 0
+    contrib_per_ton = contribution / inputs["processed_tons"] if inputs["processed_tons"] else 0
 
     return {
         "Revenue": revenue,
@@ -46,7 +46,7 @@ def calculate_results(inputs: dict) -> dict:
         "_var_cost_per_processed_ton_component": var_cost_per_processed_ton,
     }
 
-def style_comparison_table(df_raw: pd.DataFrame, eps: float = 1e-9):
+def style_comparison_table(df_raw, eps=1e-9):
     def style_row(row):
         current_val = float(row["Current"])
         original_val = float(row["Original Scenario"])
@@ -75,21 +75,21 @@ def style_comparison_table(df_raw: pd.DataFrame, eps: float = 1e-9):
     return styler
 
 # =====================================================
-# DEFAULTS + SESSION STATE
+# DEFAULTS (INTEGERS NOW)
 # =====================================================
 DEFAULTS = {
-    "unit_price": 200.0,
-    "net_saleable_tons": 1000.0,
-    "processed_tons": 1100.0,
-    "energy_per_ton": 15.0,
-    "labor_per_ton": 20.0,
-    "other_per_ton": 10.0,
-    "fixed_cost": 120000.0,
+    "unit_price": 200,
+    "net_saleable_tons": 1000,
+    "processed_tons": 1100,
+    "energy_per_ton": 15,
+    "labor_per_ton": 20,
+    "other_per_ton": 10,
+    "fixed_cost": 120000,
 }
 
 for k, v in DEFAULTS.items():
     if k not in st.session_state:
-        st.session_state[k] = float(v)
+        st.session_state[k] = v
 
 if "step" not in st.session_state:
     st.session_state.step = 1
@@ -102,23 +102,23 @@ if "original_snapshot" not in st.session_state:
 # =====================================================
 SCENARIOS = {
     "Base case": dict(DEFAULTS),
-    "Energy spike": {**DEFAULTS, "energy_per_ton": 30.0},
-    "Price pressure": {**DEFAULTS, "unit_price": 160.0},
-    "Lower yield": {**DEFAULTS, "processed_tons": 1200.0, "net_saleable_tons": 950.0},
+    "Energy spike": {**DEFAULTS, "energy_per_ton": 30},
+    "Price pressure": {**DEFAULTS, "unit_price": 160},
+    "Lower yield": {**DEFAULTS, "processed_tons": 1200, "net_saleable_tons": 950},
 }
 
 scenario_name = st.selectbox("Scenario", list(SCENARIOS.keys()))
 
 if st.button("Load scenario numbers"):
     for k, v in SCENARIOS[scenario_name].items():
-        st.session_state[k] = float(v)
+        st.session_state[k] = v
     st.session_state.original_snapshot = calculate_results(SCENARIOS[scenario_name].copy())
     st.rerun()
 
 st.divider()
 
 # =====================================================
-# SIDEBAR NAVIGATION
+# SIDEBAR
 # =====================================================
 with st.sidebar:
     st.header("Navigation")
@@ -144,7 +144,7 @@ with st.sidebar:
 # =====================================================
 # INPUT LOCKING
 # =====================================================
-def disabled_for(control_name: str) -> bool:
+def disabled_for(control_name):
     if explore_mode:
         return False
 
@@ -165,15 +165,16 @@ left, right = st.columns([1, 1.6])
 
 with left:
     st.subheader("Inputs")
-    st.number_input("Unit price", key="unit_price", disabled=disabled_for("unit_price"))
-    st.number_input("Net saleable tons", key="net_saleable_tons", disabled=disabled_for("net_saleable_tons"))
-    st.number_input("Processed tons", key="processed_tons", disabled=disabled_for("processed_tons"))
-    st.number_input("Energy per ton", key="energy_per_ton", disabled=disabled_for("energy_per_ton"))
-    st.number_input("Labor per ton", key="labor_per_ton", disabled=disabled_for("labor_per_ton"))
-    st.number_input("Other per ton", key="other_per_ton", disabled=disabled_for("other_per_ton"))
-    st.number_input("Fixed cost", key="fixed_cost", disabled=disabled_for("fixed_cost"))
 
-inputs = {k: float(st.session_state[k]) for k in DEFAULTS.keys()}
+    st.number_input("Unit price", step=1, key="unit_price", disabled=disabled_for("unit_price"))
+    st.number_input("Net saleable tons", step=1, key="net_saleable_tons", disabled=disabled_for("net_saleable_tons"))
+    st.number_input("Processed tons", step=1, key="processed_tons", disabled=disabled_for("processed_tons"))
+    st.number_input("Energy per ton", step=1, key="energy_per_ton", disabled=disabled_for("energy_per_ton"))
+    st.number_input("Labor per ton", step=1, key="labor_per_ton", disabled=disabled_for("labor_per_ton"))
+    st.number_input("Other per ton", step=1, key="other_per_ton", disabled=disabled_for("other_per_ton"))
+    st.number_input("Fixed cost", step=1000, key="fixed_cost", disabled=disabled_for("fixed_cost"))
+
+inputs = {k: st.session_state[k] for k in DEFAULTS.keys()}
 current = calculate_results(inputs)
 baseline = st.session_state.original_snapshot
 
@@ -222,8 +223,8 @@ with right:
     rows = []
 
     for m in metrics:
-        cur = float(current[m])
-        base = float(baseline[m])
+        cur = current[m]
+        base = baseline[m]
         var = cur - base
         rows.append([cur, base, var])
 
